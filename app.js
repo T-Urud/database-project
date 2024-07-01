@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const stuffRoutes = require("./routes/stuff");
+const userRoutes = require("./routes/user");
 // const cors = require("cors");
 
 mongoose
@@ -37,5 +38,6 @@ app.use(bodyParser.json());
 // pour gérer POST request venant du frontend il faut extraire le corps JSON
 
 app.use("/api/stuff", stuffRoutes);
+app.use("/api/auth", userRoutes);
 
 module.exports = app;
