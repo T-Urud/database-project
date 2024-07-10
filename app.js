@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const stuffRoutes = require("./routes/stuff");
 const userRoutes = require("./routes/user");
+const path = require("path");
 // const cors = require("cors");
 
 mongoose
@@ -33,6 +34,9 @@ app.use((req, res, next) => {
 
 // app.use(cors());
 // The cors package makes it easier to handle CORS in Express applications.
+
+app.use("/images", express.static(path.join(__dirname, "images")));
+// indique à Express qu'il faut gérer la ressource images de manière statique (un sous-répertoire de notre répertoire de base, __dirname) à chaque fois qu'elle reçoit une requête vers la route /images
 
 app.use(bodyParser.json());
 // pour gérer POST request venant du frontend il faut extraire le corps JSON

@@ -1,4 +1,5 @@
 const Thing = require("../models/Thing");
+const fs = require("fs");
 
 exports.createThing = (req, res, next) => {
   const thingObject = JSON.parse(req.body.thing);
@@ -28,15 +29,55 @@ exports.createThing = (req, res, next) => {
 };
 
 exports.modifyThing = (req, res, next) => {
-  Thing.updateOne({ _id: req.params.id }, { ...req.body, _id: req.params.id })
-    .then(() => res.status(200).json({ message: "objet modifié" }))
-    .catch((error) => res.status(400).json({ error }));
+  const thingObject = req.file
+    ? {
+        ...JSON.parse(req.body.thing),
+        imageUrl: `${req.protocol}://${req.get("host")}/images/${
+          req.file.filename
+        }`,
+      }
+    : { ...req.body };
+
+  delete thingObject._userId;
+  Thing.findOne({ _id: req.params.id })
+    .then((thing) => {
+      if (thing.userId != req.auth.userId) {
+        res.status(401).json({ message: "Not authorized" });
+      } else {
+        Thing.updateOne(
+          { _id: req.params.id },
+          { ...thingObject, _id: req.params.id }
+        )
+          .then(() => res.status(200).json({ message: "objet modifié" }))
+          .catch((error) => res.status(400).json({ error }));
+      }
+    })
+    .catch((error) => {
+      res.status(400).json({ error });
+    });
 };
 
 exports.deleteThing = (req, res, next) => {
-  Thing.deleteOne({ _id: req.params.id })
-    .then(() => res.status(200).json({ message: "objet supprimé" }))
-    .catch((error) => res.status(400).json({ error }));
+  Thing.findOne({ _id: req.params.id })
+    // utilise ID reçu comme parametre pour accéder au Thing correspondant dans database
+    .then((thing) => {
+      if (thing.userId != req.auth.userId) {
+        res.status(401).json({ message: "Not authorized" });
+      } else {
+        const filename = thing.imageUrl.split("/images/")[1];
+        // utilise le fait de savoir que notre URL d'image contient un segment /images/ pour séparer le nom de fichier
+        fs.unlink(`images/${filename}`, () => {
+          // utilise fct unlink du package fs pour supprimer file, en lui passant file à supprimer et le callback à exécuter une fois ce file supprimé
+          Thing.deleteOne({ _id: req.params.id })
+            .then(() => {
+              res.status(200).json({ message: "objet supprimé" });
+            })
+            .catch((error) => res.status(401).json({ error }));
+          // logique d'origine en supprimant le Thing de la database
+        });
+      }
+    })
+    .catch((error) => res.status(500).json({ error }));
 };
 
 exports.getOneThing = (req, res, next) => {
