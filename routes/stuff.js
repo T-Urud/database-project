@@ -1,6 +1,9 @@
 const express = require("express");
-const auth = require("auth");
 const router = express.Router();
+
+const auth = require("../middleware/auth");
+const multer = require("../middleware/multer-config");
+// ordre important, multer après auth !!!!
 
 const stuffCtrl = require("../controllers/stuff");
 
@@ -10,10 +13,10 @@ const stuffCtrl = require("../controllers/stuff");
 // app.post permet au middleware de seulement répondre aux POST request
 // Placer la route POST au-dessus du middleware pour les GET request
 
-router.post("/", auth, stuffCtrl.createThing);
+router.get("/", auth, stuffCtrl.getAllThing);
+router.post("/", auth, multer, stuffCtrl.createThing);
+router.get("/:id", auth, stuffCtrl.getOneThing);
 router.put("/:id", auth, stuffCtrl.modifyThing);
 router.delete("/:id", auth, stuffCtrl.deleteThing);
-router.get("/:id", auth, stuffCtrl.getOneThing);
-router.get("/", auth, stuffCtrl.getAllThing);
 
 module.exports = router;

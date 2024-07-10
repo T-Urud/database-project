@@ -1,12 +1,25 @@
 const Thing = require("../models/Thing");
 
 exports.createThing = (req, res, next) => {
-  delete req.body._id;
-  // supprime le faux id envoyé par le front-end
+  const thingObject = JSON.parse(req.body.thing);
+  // envoie de données sous la forme form-data et non JSON
+
+  delete thingObject._id;
+  // supp _id car database en génère un nouveau
+  delete thingObject._userId;
+  // supp _userId de la req envoyée par client car peut pas trust (peut envoyer userId d'un autre)
+
   const thing = new Thing({
-    ...req.body,
-    // spread operator pour faire une copie de tous les éléments de req.body
+    ...thingObject,
+    // spread operator pour faire une copie de tous les éléments
+    userId: req.auth.userId,
+    // Remplaçons en base de données par le _userId extrait du token par le middleware d’authentification.
+    imageUrl: `${req.protocol}://${req.get("host")}/images/${
+      req.file.filename
+    }`,
+    // génère le chemin complet
   });
+
   thing
     .save()
     // enregistre Thing dans la database
